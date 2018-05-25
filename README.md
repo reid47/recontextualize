@@ -17,7 +17,7 @@ const { StoreProvider, withStore } = initializeStore(myDataStore);
 export { StoreProvider, withStore };
 ```
 
-This gives you the two pieces you'll need: `StoreProvider` and `withStore`.
+This gives you the two pieces you'll need: `StoreProvider` (a component) and `withStore` (a function that returns a higher-order component). Export these so they can be used elsewhere in your app.
 
 Somewhere near the top of your render tree, wrap your whole application in the `StoreProvider` component:
 
