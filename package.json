@@ -1,0 +1,26 @@
+{
+  "name": "recontextualize",
+  "version": "1.0.0",
+  "description": "Simple React state management library based on React.createContext",
+  "main": "index.js",
+  "author": "Reid Mitchell",
+  "license": "MIT",
+  "scripts": {
+    "build": "babel src -d dist",
+    "test": "jest"
+  },
+  "dependencies": {
+    "react": "^16.4.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-jest": "^23.0.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-react": "^6.24.1"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.jsx?$": "babel-jest"
+    }
+  }
+}
