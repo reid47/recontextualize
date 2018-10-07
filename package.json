@@ -1,7 +1,7 @@
 {
   "name": "recontextualize",
   "version": "1.0.0",
-  "description": "Simple React state management library based on React.createContext",
+  "description": "Super-simple React state management library",
   "main": "dist/index.js",
   "author": "Reid Mitchell",
   "license": "MIT",
