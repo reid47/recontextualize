@@ -14,8 +14,8 @@ export default function createStore(initialStore) {
       this.setStore = (updater, callback) =>
         this.setState(
           typeof updater === 'function'
-            ? ({ store }) => ({ store: updater(store) })
-            : { store: { ...this.store, ...updater } },
+            ? ({ store }) => ({ store: { ...store, ...updater(store) } })
+            : { store: { ...this.state.store, ...updater } },
           callback && (() => callback(this.state.store))
         );
 

@@ -1,6 +1,6 @@
 {
   "name": "recontextualize",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Super-simple React state management library",
   "main": "dist/index.js",
   "author": "Reid Mitchell",

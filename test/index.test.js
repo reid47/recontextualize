@@ -10,6 +10,7 @@ describe('createStore with an initial store object', () => {
   beforeEach(() => {
     initialStore = {
       booleanProp: false,
+      unchanged: 1028,
       numberProp: 47,
       objProp: { a: true, b: 'hello' }
     };
@@ -130,7 +131,9 @@ describe('createStore with an initial store object', () => {
       beforeEach(() => {
         ComponentWithStore = withStore(({ store, setStore }) => (
           <div>
-            <div id="result">number is {store.numberProp}</div>
+            <div id="result">
+              {store.unchanged} and {store.numberProp}
+            </div>
             <button
               id="btn1"
               onClick={() => setStore(({ numberProp }) => ({ numberProp: numberProp + 1 }))}
@@ -157,17 +160,29 @@ describe('createStore with an initial store object', () => {
       });
 
       it('renders number correctly initially', () => {
-        expect(rendered.root.findByProps({ id: 'result' }).children).toEqual(['number is ', '47']);
+        expect(rendered.root.findByProps({ id: 'result' }).children).toEqual([
+          '1028',
+          ' and ',
+          '47'
+        ]);
       });
 
       it('works correctly when given an updater function', () => {
         rendered.root.findByProps({ id: 'btn1' }).props.onClick();
-        expect(rendered.root.findByProps({ id: 'result' }).children).toEqual(['number is ', '48']);
+        expect(rendered.root.findByProps({ id: 'result' }).children).toEqual([
+          '1028',
+          ' and ',
+          '48'
+        ]);
       });
 
       it('works correctly when given a state object', () => {
         rendered.root.findByProps({ id: 'btn2' }).props.onClick();
-        expect(rendered.root.findByProps({ id: 'result' }).children).toEqual(['number is ', '100']);
+        expect(rendered.root.findByProps({ id: 'result' }).children).toEqual([
+          '1028',
+          ' and ',
+          '100'
+        ]);
       });
     });
   });
@@ -369,7 +384,11 @@ describe('createStore with an initial store function', () => {
       it('works correctly when given a state object and callback', () => {
         rendered.root.findByProps({ id: 'btn3' }).props.onClick();
         expect(rendered.root.findByProps({ id: 'result' }).children).toEqual(['number is ', '2']);
-        expect(callback).toHaveBeenCalledWith({ numberProp: 2 });
+        expect(callback).toHaveBeenCalledWith({
+          booleanProp: false,
+          numberProp: 2,
+          objProp: { a: true, b: 'hello' }
+        });
       });
     });
   });
