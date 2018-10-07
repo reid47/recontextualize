@@ -2,10 +2,10 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import * as ReactIs from 'react-is';
 import TestRenderer from 'react-test-renderer';
-import init from '../src';
+import createStore from '../src';
 
-describe('init', () => {
-  let initialStore, StoreProvider, withStore;
+describe('createStore', () => {
+  let initialStore, StoreProvider, StoreConsumer, withStore;
 
   beforeEach(() => {
     initialStore = {
@@ -14,15 +14,18 @@ describe('init', () => {
       objProp: { a: true, b: 'hello' }
     };
 
-    ({ StoreProvider, withStore } = init(initialStore));
+    ({ StoreProvider, StoreConsumer, withStore } = createStore(initialStore));
   });
 
   it('returns a StoreProvider component', () => {
-    expect(typeof StoreProvider).toBe('object');
-    expect(StoreProvider.$$typeof).not.toBeUndefined();
-    expect(StoreProvider._context).not.toBeUndefined();
+    expect(typeof StoreProvider).toBe('function');
     expect(StoreProvider.displayName).toBe('StoreProvider');
-    expect(StoreProvider._context.displayName).toBe('StoreConsumer');
+    expect(ReactIs.isElement(<StoreProvider />)).toBeTruthy();
+  });
+
+  it('returns a StoreConsumer component', () => {
+    expect(typeof StoreConsumer).toBe('object');
+    expect(ReactIs.isElement(<StoreConsumer />)).toBeTruthy();
   });
 
   it('returns a withStore function', () => {
@@ -30,28 +33,10 @@ describe('init', () => {
   });
 
   describe('withStore', () => {
-    let TestApp, Middle, UnwrappedComponent, WrappedComponent;
+    let TestApp, ComponentWithoutStore, ComponentWithStore;
 
     beforeEach(() => {
-      TestApp = class extends React.Component {
-        state = initialStore;
-
-        render() {
-          return (
-            <StoreProvider value={this.state}>
-              <Middle />
-            </StoreProvider>
-          );
-        }
-      };
-
-      Middle = class extends React.Component {
-        render() {
-          return <WrappedComponent otherProp="test" booleanProp={true} />;
-        }
-      };
-
-      UnwrappedComponent = class extends React.PureComponent {
+      ComponentWithoutStore = class extends React.PureComponent {
         static propTypes = {
           otherProp: PropTypes.string
         };
@@ -70,24 +55,34 @@ describe('init', () => {
         }
       };
 
-      WrappedComponent = withStore('numberProp', 'booleanProp')(UnwrappedComponent);
+      ComponentWithStore = withStore(ComponentWithoutStore);
+
+      TestApp = class extends React.Component {
+        render() {
+          return (
+            <StoreProvider>
+              <ComponentWithStore />
+            </StoreProvider>
+          );
+        }
+      };
     });
 
     it('returns a component', () => {
-      expect(WrappedComponent).toBeDefined();
-      expect(ReactIs.isElement(<WrappedComponent />)).toBeTruthy();
+      expect(ComponentWithStore).toBeDefined();
+      expect(ReactIs.isElement(<ComponentWithStore />)).toBeTruthy();
     });
 
     it('sets propTypes on wrapped component', () => {
-      expect(WrappedComponent.propTypes).toEqual(UnwrappedComponent.propTypes);
+      expect(ComponentWithStore.propTypes).toEqual(ComponentWithoutStore.propTypes);
     });
 
     it('sets defaultProps on wrapped component', () => {
-      expect(WrappedComponent.defaultProps).toEqual(UnwrappedComponent.defaultProps);
+      expect(ComponentWithStore.defaultProps).toEqual(ComponentWithoutStore.defaultProps);
     });
 
     it('sets displayName on wrapped component', () => {
-      expect(WrappedComponent.displayName).toBe('withStore(UnwrappedComponent)');
+      expect(ComponentWithStore.displayName).toBe('withStore(ComponentWithoutStore)');
     });
 
     describe('rendering the wrapped component', () => {
@@ -98,17 +93,21 @@ describe('init', () => {
       });
 
       it('passes requested props down, giving preference to explicitly passed props on collisions', () => {
-        expect(rendered.root.findByType(UnwrappedComponent).props).toEqual({
-          booleanProp: true,
-          numberProp: 47,
-          otherProp: 'test'
+        expect(rendered.root.findByType(ComponentWithStore).props).toEqual({
+          otherProp: 'hello'
+        });
+
+        expect(rendered.root.findByType(ComponentWithoutStore).props).toEqual({
+          otherProp: 'hello',
+          store: initialStore,
+          setStore: expect.any(Function)
         });
       });
     });
 
     describe('when displayName is set on unwrapped component', () => {
       beforeEach(() => {
-        UnwrappedComponent = class extends React.PureComponent {
+        ComponentWithoutStore = class extends React.PureComponent {
           static displayName = 'TestDisplayName';
 
           render() {
@@ -117,11 +116,58 @@ describe('init', () => {
           }
         };
 
-        WrappedComponent = withStore('numberProp')(UnwrappedComponent);
+        ComponentWithStore = withStore(ComponentWithoutStore);
       });
 
       it('uses that displayName in the displayName of the wrapped component', () => {
-        expect(WrappedComponent.displayName).toBe('withStore(TestDisplayName)');
+        expect(ComponentWithStore.displayName).toBe('withStore(TestDisplayName)');
+      });
+    });
+
+    describe('using setStore', () => {
+      let rendered;
+
+      beforeEach(() => {
+        ComponentWithStore = withStore(({ store, setStore }) => (
+          <div>
+            <div id="result">number is {store.numberProp}</div>
+            <button
+              id="btn1"
+              onClick={() => setStore(({ numberProp }) => ({ numberProp: numberProp + 1 }))}
+            >
+              increment with updater function
+            </button>
+            <button id="btn2" onClick={() => setStore({ numberProp: 100 })}>
+              set with state object
+            </button>
+          </div>
+        ));
+
+        TestApp = class extends React.PureComponent {
+          render() {
+            return (
+              <StoreProvider>
+                <ComponentWithStore />
+              </StoreProvider>
+            );
+          }
+        };
+
+        rendered = TestRenderer.create(<TestApp />);
+      });
+
+      it('renders number correctly initially', () => {
+        expect(rendered.root.findByProps({ id: 'result' }).children).toEqual(['number is ', '47']);
+      });
+
+      it('works correctly when given an updater function', () => {
+        rendered.root.findByProps({ id: 'btn1' }).props.onClick();
+        expect(rendered.root.findByProps({ id: 'result' }).children).toEqual(['number is ', '48']);
+      });
+
+      it('works correctly when given a state object', () => {
+        rendered.root.findByProps({ id: 'btn2' }).props.onClick();
+        expect(rendered.root.findByProps({ id: 'result' }).children).toEqual(['number is ', '100']);
       });
     });
   });
