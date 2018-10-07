@@ -1,7 +1,7 @@
 import React, { PureComponent, createContext } from 'react';
 
-export default function createStore(initialStore = {}) {
-  const initial = typeof initialStore === 'function' ? initialStore() : initialStore;
+export default function createStore(initialStore) {
+  const initial = (typeof initialStore === 'function' ? initialStore() : initialStore) || {};
 
   const { Provider, Consumer } = createContext(initial);
 
@@ -20,7 +20,7 @@ export default function createStore(initialStore = {}) {
         );
 
       this.state = {
-        store: initial || {},
+        store: initial,
         setStore: this.setStore
       };
     }
